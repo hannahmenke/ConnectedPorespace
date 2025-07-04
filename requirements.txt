@@ -1,3 +1,14 @@
+# Core dependencies
 numpy>=1.19.0
 scipy>=1.6.0
-matplotlib>=3.3.0 
+matplotlib>=3.3.0
+
+# High-performance 3D connectivity analysis (highly recommended)
+# Provides 10-50x speed improvement for 3D volumes
+connected-components-3d>=3.0.0
+
+# Optional: For enhanced visualization and data handling
+# Uncomment the following for additional features:
+# pillow>=8.0.0          # For additional image format support
+# tifffile>=2021.1.1     # For TIFF stack support
+# h5py>=3.0.0            # For HDF5 data format support 
