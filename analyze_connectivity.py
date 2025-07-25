@@ -157,8 +157,8 @@ def get_connected_pores_mask_3d(image, pore_ranges, direction):
     
     # Use cc3d if available (much faster), otherwise fall back to scipy
     if CC3D_AVAILABLE:
-        # cc3d is much faster for 3D volumes
-        labeled_array = cc3d.connected_components(pore_mask.astype(np.uint8))
+        # cc3d is much faster for 3D volumes - use connectivity=6 for face-connected only
+        labeled_array = cc3d.connected_components(pore_mask.astype(np.uint8), connectivity=6)
         stats = cc3d.statistics(labeled_array)
         num_features = len(stats['voxel_counts']) - 1  # Exclude background
         
@@ -187,8 +187,16 @@ def get_connected_pores_mask_3d(image, pore_ranges, direction):
                 bboxes.append([0, 0, 0, 1, 1, 1])
         
     else:
-        # Fallback to scipy (slower)
-        labeled_array, num_features = label(pore_mask)
+        # Fallback to scipy (slower) - use structure for 6-connectivity (face-connected only)
+        # Create 3D structure for 6-connectivity (face neighbors only)
+        structure = np.zeros((3, 3, 3), dtype=bool)
+        structure[1, 1, 0] = True  # front
+        structure[1, 1, 2] = True  # back
+        structure[1, 0, 1] = True  # top
+        structure[1, 2, 1] = True  # bottom
+        structure[0, 1, 1] = True  # left
+        structure[2, 1, 1] = True  # right
+        labeled_array, num_features = label(pore_mask, structure=structure)
         
         if num_features == 0:
             return np.zeros_like(pore_mask, dtype=bool)
@@ -580,7 +588,15 @@ def visualize_slice_3d(image, modified_image, unconnected_pores, pore_ranges, sl
     # Volume rendering preview (simplified)
     ax10 = fig.add_subplot(gs[1, 4], projection='3d')
     # Create a simplified 3D representation by showing connected components
-    labeled_pores, num_components = label(pore_mask)
+    # Use 6-connectivity structure for consistency with main analysis
+    structure = np.zeros((3, 3, 3), dtype=bool)
+    structure[1, 1, 0] = True  # front
+    structure[1, 1, 2] = True  # back
+    structure[1, 0, 1] = True  # top
+    structure[1, 2, 1] = True  # bottom
+    structure[0, 1, 1] = True  # left
+    structure[2, 1, 1] = True  # right
+    labeled_pores, num_components = label(pore_mask, structure=structure)
     if num_components > 0:
         # Show largest connected component
         component_sizes = np.bincount(labeled_pores.ravel())[1:]
@@ -809,7 +825,19 @@ def main():
         
         # Print connectivity information
         pore_mask = create_phase_mask(image, pore_ranges)
-        labeled_pores, num_components = label(pore_mask)
+        if len(shape) == 3:
+            # Use 6-connectivity for 3D analysis consistency
+            structure = np.zeros((3, 3, 3), dtype=bool)
+            structure[1, 1, 0] = True  # front
+            structure[1, 1, 2] = True  # back
+            structure[1, 0, 1] = True  # top
+            structure[1, 2, 1] = True  # bottom
+            structure[0, 1, 1] = True  # left
+            structure[2, 1, 1] = True  # right
+            labeled_pores, num_components = label(pore_mask, structure=structure)
+        else:
+            # 2D uses default 8-connectivity (4-connectivity is too restrictive for 2D micromodels)
+            labeled_pores, num_components = label(pore_mask)
         if num_components > 0:
             component_sizes = np.bincount(labeled_pores.ravel())[1:]  # Skip background
             print(f"Total connected pore components: {num_components}")
