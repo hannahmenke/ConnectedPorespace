@@ -77,7 +77,10 @@ python analyze_connectivity.py rock_sample.raw \
 ## Parameters
 
 - `filepath`: Path to the raw image file
-- `--shape`: Image dimensions (e.g., "256 256" for 2D or "64 256 256" for 3D)
+- `--shape`: Image dimensions. Order matters:
+  - 3D: `Z Y X` = `depth height width` (e.g., `64 256 256` means 64 slices of 256×256)
+  - 2D: `Y X` = `height width` (e.g., `1200 1200`)
+  - Example: For a 6-slice 1200×1200 stack, use `--shape 6 1200 1200`.
 - `--pores`: Pore phase ranges (e.g., "0-50,200-255")
 - `--solids`: Solid phase ranges (e.g., "51-199")
 - `--micropores`: Optional micropore phase ranges
@@ -192,6 +195,21 @@ The tool works with raw binary image files:
 - **3D**: Depth × Height × Width pixels
 - **Data type**: uint8 (values 0-255)
 - **Phase encoding**: Different grayscale values represent different material phases
+
+## Image Shape Order
+
+This tool reads raw files directly with NumPy using C-order: `np.fromfile(..., dtype=np.uint8).reshape(shape)`. For 3D data, the expected shape order is strictly `Z × Y × X` (depth, height, width). For 2D, it is `Y × X` (height, width).
+
+- 3D example: `--shape 6 1200 1200` means 6 slices of size 1200×1200.
+- 2D example: `--shape 1200 1200` for a single 1200×1200 image.
+
+Why this matters: Passing the shape in a different order (e.g., `1200 1200 6`) will distort how the volume is interpreted. A common symptom is horizontal or vertical streaking/banding when viewing the output as a 2D image, often with a periodicity equal to the mistakenly short axis length (e.g., 6 pixels).
+
+Troubleshooting shape issues:
+- If you see streaks/banding, double-check that `--shape` is `Z Y X` for 3D. Swap axes if needed.
+- The script prints `Image shape: (Z, Y, X)` after loading; confirm it matches expectations.
+- When viewing `result.raw` in another tool, configure it as a stack of `Z` slices, each of size `Y × X`.
+- If your 3D data is a repeated 2D slice along Z, you may analyze it as true 3D with `--shape Z Y X` or simply as 2D using `--shape Y X`.
 
 ## Examples
 
