@@ -252,8 +252,8 @@ If you use this tool in your research, please cite:
 @software{pore_connectivity_analysis,
   title = {Pore Connectivity Analysis Tool: High-Performance 2D/3D Percolation Analysis},
   author = {Hannah P. Menke},
-  url = {[https://github.com/[username]/pore-connectivity-analysis}](https://github.com/hannahmenke/ConnectedPorespace/),
-  year = {2025,
+  url = {[https://github.com/hannahmenke/ConnectedPorespace/]},
+  year = {2025},
   note = {Fast 3D connectivity analysis using connected-components-3d}
 }
 ```
